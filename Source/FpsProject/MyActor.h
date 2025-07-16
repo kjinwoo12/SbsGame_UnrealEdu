@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "FpsProject.h"
 #include "GameFramework/Actor.h"
 #include "MyActor.generated.h"
 

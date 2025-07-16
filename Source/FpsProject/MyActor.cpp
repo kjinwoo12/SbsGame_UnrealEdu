@@ -27,7 +27,9 @@ AMyActor::AMyActor()
 void AMyActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	ABLOG_S(Warning);
+	ABLOG(Warning, TEXT("Name(%s), Position.X(%0.3f)"), *GetName(), GetActorLocation().X);
 }
 
 // Called every frame
