@@ -6,6 +6,9 @@
 #include "Animation/AnimInstance.h"
 #include "MyAnimInstance.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnNextAttackCheckDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnAttackHitCheckDelegate);
+
 /**
  * 
  */
@@ -14,4 +17,23 @@ class FPSPROJECT_API UMyAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AttackMontage;
+
+public:
+	FOnNextAttackCheckDelegate OnNextAttackCheckDelegate;
+	FOnAttackHitCheckDelegate OnAttackHitCheckDelegate;
+
+public:
+	void PlayAttackMontage();
+	void JumpToAttackMontageSection(int32 NewSection);
+
+private:
+	UFUNCTION()
+	void AnimNotify_AttackHitCheck();
+
+	UFUNCTION()
+	void AnimNotify_NextAttackCheck();
+
+	void GetAttackMontageSectionName(int32 Section);
 };

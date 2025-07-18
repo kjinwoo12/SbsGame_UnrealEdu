@@ -12,6 +12,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UMyAnimInstance;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -51,13 +52,21 @@ public:
 	ATP_ThirdPersonCharacter();
 
 	UPROPERTY(BlueprintReadOnly)
-	int32 ReadOnlyInteger;
+	bool IsAttacking;
 
-	UPROPERTY(BlueprintReadWrite)
-	int32 ReadWriteInteger;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	bool CanNextCombo;
 
-	UPROPERTY(BlueprintReadOnly)
-	bool isAttack;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	bool IsComboInputOn;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	int32 CurrentCombo;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	int32 MaxCombo;
+
+	UMyAnimInstance* AnimInstance;
 
 protected:
 
@@ -69,9 +78,8 @@ protected:
 
 	void Attack(const FInputActionValue& Value);
 
-	UFUNCTION(BlueprintCallable)
-	void AttackDone();
-			
+	void AttackStartComboState();
+	void AttackEndComboState();
 
 protected:
 	// APawn interface
@@ -79,6 +87,11 @@ protected:
 	
 	// To add mapping context
 	virtual void BeginPlay();
+
+	virtual void PostInitializeComponents() override;
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 public:
 	/** Returns CameraBoom subobject **/

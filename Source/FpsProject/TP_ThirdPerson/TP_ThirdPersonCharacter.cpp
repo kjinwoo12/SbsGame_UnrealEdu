@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "FpsProject/MyAnimInstance.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -52,6 +53,11 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	MaxCombo = 4;
+	IsComboInputOn = false;
+	CanNextCombo = false;
+	CurrentCombo = 0;
 }
 
 void ATP_ThirdPersonCharacter::BeginPlay()
@@ -67,6 +73,31 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+}
+
+void ATP_ThirdPersonCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	AnimInstance = Cast<UMyAnimInstance>(GetMesh()->GetAnimInstance());
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.AddDynamic(this, &ATP_ThirdPersonCharacter::OnAttackMontageEnded);
+		AnimInstance->OnNextAttackCheckDelegate.AddLambda([this]()-> void {
+			CanNextCombo = false;
+			if (IsComboInputOn)
+			{
+				AttackStartComboState();
+				AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+			}
+		});
+	}
+}
+
+void ATP_ThirdPersonCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	IsAttacking = false;
+	AttackEndComboState();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -133,10 +164,40 @@ void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
 
 void ATP_ThirdPersonCharacter::Attack(const FInputActionValue& Value)
 {
-	isAttack = true;
+	UE_LOG(LogTemp, Log, TEXT("ATP_ThirdPersonCharacter::Attack"));
+
+	if (!AnimInstance)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ATP_ThirdPersonCharacter::Attack - AnimInstance is invalid"));
+		return;
+	}
+
+	if (IsAttacking)
+	{
+		if (CanNextCombo)
+		{
+			IsComboInputOn = true;
+		}
+	}
+	else
+	{
+		AttackStartComboState();
+		AnimInstance->PlayAttackMontage();
+		AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+		IsAttacking = true;
+	}
 }
 
-void ATP_ThirdPersonCharacter::AttackDone()
+void ATP_ThirdPersonCharacter::AttackStartComboState()
 {
-	isAttack = false;
+	CanNextCombo = true;
+	IsComboInputOn = false;
+	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
+}
+
+void ATP_ThirdPersonCharacter::AttackEndComboState()
+{
+	IsComboInputOn = false;
+	CanNextCombo = false;
+	CurrentCombo = 0;
 }
