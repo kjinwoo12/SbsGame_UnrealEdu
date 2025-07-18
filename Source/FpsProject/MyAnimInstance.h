@@ -35,5 +35,5 @@ private:
 	UFUNCTION()
 	void AnimNotify_NextAttackCheck();
 
-	void GetAttackMontageSectionName(int32 Section);
+	FName GetAttackMontageSectionName(int32 Section);
 };
